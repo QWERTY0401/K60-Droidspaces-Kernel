@@ -12,15 +12,40 @@ jobs:
     - name: Checkout kernel source
       uses: actions/checkout@v4
 
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          bc \
+          bison \
+          flex \
+          libssl-dev \
+          python3 \
+          zip \
+          cpio \
+          rsync \
+          pahole
+
     - name: Clone kernel build tools
       run: |
-        git clone --depth=1 https://android.googlesource.com/kernel/build kernel-build
+        git clone --depth=1 \
+        https://android.googlesource.com/kernel/build \
+        kernel-build
+
+        ls -la kernel-build
 
     - name: Build kernel
       run: |
-        export BUILD_CONFIG=build.config.msm.mondrian
+        export BUILD_CONFIG=$GITHUB_WORKSPACE/build.config.msm.mondrian
         export OUT_DIR=$GITHUB_WORKSPACE/out
-        kernel-build/build.sh
+
+        cd kernel-build
+
+        ./build.sh
+
+    - name: Check output
+      run: |
+        find out -name Image
 
     - name: Upload Image
       uses: actions/upload-artifact@v4
