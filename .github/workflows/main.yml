@@ -19,18 +19,48 @@ jobs:
 
     - name: Clone kernel build tools
       run: |
-        git clone --depth=1 https://android.googlesource.com/kernel/build kernel-build
+        if [ ! -d "kernel-build" ]; then
+          git clone --depth=1 https://android.googlesource.com/kernel/build kernel-build
+          if [ $? -ne 0 ]; then
+            echo "Failed to clone kernel-build repository"
+            exit 1
+          fi
+        fi
 
     - name: Check build tools
       run: |
-        ls kernel-build
-        ls kernel-build/build
+        if [ -d "kernel-build" ]; then
+          ls -la kernel-build/
+          if [ -f "kernel-build/build/build.sh" ]; then
+            echo "build.sh found at kernel-build/build/build.sh"
+          else
+            echo "build.sh not found"
+            exit 1
+          fi
+        else
+          echo "kernel-build directory not found"
+          exit 1
+        fi
+
+    - name: Make build script executable
+      run: |
+        chmod +x kernel-build/build/build.sh
 
     - name: Build kernel
       run: |
         export BUILD_CONFIG=build.config.msm.mondrian
         export OUT_DIR=$GITHUB_WORKSPACE/out
-        kernel-build/build/build.sh
+        cd $GITHUB_WORKSPACE
+        ./kernel-build/build/build.sh
+
+    - name: Check build output
+      if: always()
+      run: |
+        if [ -d "out" ]; then
+          find out -type f -name "Image*"
+        else
+          echo "out directory not created"
+        fi
 
     - name: Upload Image
       uses: actions/upload-artifact@v4
@@ -38,3 +68,4 @@ jobs:
         name: K60-Droidspaces-kernel
         path: |
           out/**/Image
+      if: success()
