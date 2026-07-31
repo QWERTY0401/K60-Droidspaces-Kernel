@@ -1,0 +1,30 @@
+name: Build K60 Droidspaces Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+
+    - name: Checkout kernel source
+      uses: actions/checkout@v4
+
+    - name: Clone kernel build tools
+      run: |
+        git clone --depth=1 https://android.googlesource.com/kernel/build kernel-build
+
+    - name: Build kernel
+      run: |
+        export BUILD_CONFIG=build.config.msm.mondrian
+        export OUT_DIR=$GITHUB_WORKSPACE/out
+        kernel-build/build.sh
+
+    - name: Upload Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: K60-Droidspaces-kernel
+        path: |
+          out/**/Image
